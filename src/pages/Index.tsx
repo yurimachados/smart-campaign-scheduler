@@ -58,11 +58,6 @@ const Index = () => {
 
   const handleNewCampaign = () => {
     navigate("/campaign/new");
-    // Esta rota ainda será implementada
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A criação de novas campanhas será implementada em breve.",
-    });
   };
 
   const handleRefresh = () => {
