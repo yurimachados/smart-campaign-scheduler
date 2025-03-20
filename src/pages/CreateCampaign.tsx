@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Users, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Calendar, Smartphone, Gauge, Users } from "lucide-react";
 import { AIPromptEditor } from "@/components/AIPromptEditor";
 import { toast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -18,15 +18,78 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Tipo de velocidade de envio
+interface SendingSpeed {
+  type: string;
+  minDelay: number;
+  maxDelay: number;
+  messagesPerHour: number;
+  description?: string;
+  customizable?: boolean;
+}
+
 const CreateCampaign = () => {
   const navigate = useNavigate();
   const [campaignName, setCampaignName] = useState("");
   const [campaignDescription, setCampaignDescription] = useState("");
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState("");
-  const [audienceSize, setAudienceSize] = useState<string>("small");
+  const [whatsappInstance, setWhatsappInstance] = useState("");
+  const [sendingSpeed, setSendingSpeed] = useState<string>("safe");
+  const [contactsList, setContactsList] = useState<string>("");
   const [prompts, setPrompts] = useState<string[]>(["Olá {{nome}},\n\nBem-vindo à nossa campanha!\n\nAtenciosamente,\nEquipe de Marketing"]);
   const [isCreating, setIsCreating] = useState(false);
+
+  // Configurações de velocidade de envio
+  const speedSettings: Record<string, SendingSpeed> = {
+    safe: {
+      type: "safe",
+      minDelay: 20,
+      maxDelay: 30,
+      messagesPerHour: 144
+    },
+    medium: {
+      type: "medium",
+      minDelay: 10,
+      maxDelay: 15,
+      messagesPerHour: 288
+    },
+    fast: {
+      type: "fast",
+      minDelay: 5,
+      maxDelay: 8,
+      messagesPerHour: 553
+    },
+    instant: {
+      type: "instant",
+      minDelay: 1,
+      maxDelay: 3,
+      messagesPerHour: 1800
+    },
+    custom: {
+      type: "custom",
+      description: "Configuração personalizada de delays",
+      customizable: true,
+      minDelay: 0,
+      maxDelay: 0,
+      messagesPerHour: 0
+    }
+  };
+
+  // Lista de instâncias de WhatsApp disponíveis
+  const whatsappInstances = [
+    { id: "instance1", name: "Instância Principal" },
+    { id: "instance2", name: "Instância de Backup" },
+    { id: "instance3", name: "Instância de Marketing" },
+  ];
+
+  // Lista de listas de contatos disponíveis
+  const contactLists = [
+    { id: "list1", name: "Clientes Ativos (542 contatos)" },
+    { id: "list2", name: "Leads Novos (238 contatos)" },
+    { id: "list3", name: "Clientes Inativos (890 contatos)" },
+    { id: "list4", name: "Aniversariantes do Mês (45 contatos)" },
+  ];
 
   const handleGoBack = () => {
     navigate(-1);
@@ -51,6 +114,24 @@ const CreateCampaign = () => {
       });
       return;
     }
+
+    if (!whatsappInstance) {
+      toast({
+        title: "Erro na criação",
+        description: "É necessário selecionar uma instância do WhatsApp.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!contactsList) {
+      toast({
+        title: "Erro na criação",
+        description: "É necessário selecionar uma lista de contatos.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsCreating(true);
     
@@ -63,13 +144,6 @@ const CreateCampaign = () => {
       });
       navigate("/");
     }, 1500);
-  };
-
-  const audienceOptions = {
-    small: { label: "Pequena (até 500 contatos)", value: "500" },
-    medium: { label: "Média (até 2.000 contatos)", value: "2000" },
-    large: { label: "Grande (até 5.000 contatos)", value: "5000" },
-    xlarge: { label: "Extra grande (até 10.000 contatos)", value: "10000" }
   };
 
   return (
@@ -123,57 +197,120 @@ const CreateCampaign = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Configuração de Audiência</h2>
+                <h2 className="text-xl font-semibold">Configurações</h2>
                 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="audienceSize" className="flex items-center">
-                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-                        Tamanho da Audiência
+                      <Label htmlFor="whatsappInstance" className="flex items-center">
+                        <Smartphone className="h-4 w-4 mr-1 text-muted-foreground" />
+                        Instância WhatsApp *
                       </Label>
                       <Select 
-                        value={audienceSize}
-                        onValueChange={setAudienceSize}
+                        value={whatsappInstance}
+                        onValueChange={setWhatsappInstance}
                       >
-                        <SelectTrigger id="audienceSize">
-                          <SelectValue placeholder="Selecione o tamanho da audiência" />
+                        <SelectTrigger id="whatsappInstance">
+                          <SelectValue placeholder="Selecione uma instância" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="small">{audienceOptions.small.label}</SelectItem>
-                          <SelectItem value="medium">{audienceOptions.medium.label}</SelectItem>
-                          <SelectItem value="large">{audienceOptions.large.label}</SelectItem>
-                          <SelectItem value="xlarge">{audienceOptions.xlarge.label}</SelectItem>
+                          {whatsappInstances.map((instance) => (
+                            <SelectItem key={instance.id} value={instance.id}>
+                              {instance.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="sendingSpeed" className="flex items-center">
+                        <Gauge className="h-4 w-4 mr-1 text-muted-foreground" />
+                        Velocidade de Envio
+                      </Label>
+                      <Select 
+                        value={sendingSpeed}
+                        onValueChange={setSendingSpeed}
+                      >
+                        <SelectTrigger id="sendingSpeed">
+                          <SelectValue placeholder="Selecione a velocidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="safe">
+                            Segura ({speedSettings.safe.messagesPerHour} msgs/hora)
+                          </SelectItem>
+                          <SelectItem value="medium">
+                            Média ({speedSettings.medium.messagesPerHour} msgs/hora)
+                          </SelectItem>
+                          <SelectItem value="fast">
+                            Rápida ({speedSettings.fast.messagesPerHour} msgs/hora)
+                          </SelectItem>
+                          <SelectItem value="instant">
+                            Instantânea ({speedSettings.instant.messagesPerHour} msgs/hora)
+                          </SelectItem>
+                          <SelectItem value="custom">
+                            Personalizada
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {sendingSpeed !== "custom" ? 
+                          `Delay entre mensagens: ${speedSettings[sendingSpeed].minDelay}-${speedSettings[sendingSpeed].maxDelay} segundos` : 
+                          "Configure os delays de acordo com sua necessidade"
+                        }
+                      </p>
                     </div>
                   </div>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Switch 
-                        id="schedule" 
-                        checked={isScheduled}
-                        onCheckedChange={setIsScheduled}
-                      />
-                      <Label htmlFor="schedule" className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
-                        Agendar envio
+                    <div className="grid gap-2">
+                      <Label htmlFor="contactsList" className="flex items-center">
+                        <Users className="h-4 w-4 mr-1 text-muted-foreground" />
+                        Lista de Contatos *
                       </Label>
+                      <Select 
+                        value={contactsList}
+                        onValueChange={setContactsList}
+                      >
+                        <SelectTrigger id="contactsList">
+                          <SelectValue placeholder="Selecione uma lista de contatos" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {contactLists.map((list) => (
+                            <SelectItem key={list.id} value={list.id}>
+                              {list.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    
-                    {isScheduled && (
-                      <div className="grid gap-2">
-                        <Label htmlFor="date">Data de envio</Label>
-                        <input
-                          type="date"
-                          id="date"
-                          value={scheduledDate}
-                          onChange={(e) => setScheduledDate(e.target.value)}
-                          className="w-full px-3 py-2 border rounded-md"
+
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch 
+                          id="schedule" 
+                          checked={isScheduled}
+                          onCheckedChange={setIsScheduled}
                         />
+                        <Label htmlFor="schedule" className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
+                          Agendar envio
+                        </Label>
                       </div>
-                    )}
+                      
+                      {isScheduled && (
+                        <div className="grid gap-2">
+                          <Label htmlFor="date">Data de envio</Label>
+                          <input
+                            type="date"
+                            id="date"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-md"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
