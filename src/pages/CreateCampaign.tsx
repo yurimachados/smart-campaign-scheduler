@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SendingMetricsCard } from "@/components/SendingMetricsCard";
 
 // Tipo de velocidade de envio
 interface SendingSpeed {
@@ -144,6 +144,23 @@ const CreateCampaign = () => {
       });
       navigate("/");
     }, 1500);
+  };
+
+  // Get the total number of contacts in the selected list
+  const getSelectedContactsCount = () => {
+    if (!contactsList) return 0;
+    const selectedList = contactLists.find(list => list.id === contactsList);
+    if (!selectedList) return 0;
+    
+    // Extract the number from the parentheses in the name
+    const match = selectedList.name.match(/\((\d+) contatos\)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  // Get messages per hour based on the selected sending speed
+  const getMessagesPerHour = () => {
+    if (!sendingSpeed || !speedSettings[sendingSpeed]) return 0;
+    return speedSettings[sendingSpeed].messagesPerHour;
   };
 
   return (
@@ -316,6 +333,17 @@ const CreateCampaign = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Adding the sending metrics card */}
+          {contactsList && sendingSpeed && (
+            <SendingMetricsCard 
+              messagesPerHour={getMessagesPerHour()}
+              totalContacts={getSelectedContactsCount()}
+              isScheduled={isScheduled}
+              scheduledDate={scheduledDate}
+              sendingSpeedType={sendingSpeed}
+            />
+          )}
 
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Conteúdo da Mensagem</h2>
