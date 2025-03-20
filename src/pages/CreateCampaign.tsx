@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SendingMetricsCard } from "@/components/SendingMetricsCard";
+import { ContactsSelectionDialog } from "@/components/ContactsSelectionDialog";
 
 // Tipo de velocidade de envio
 interface SendingSpeed {
@@ -26,6 +27,15 @@ interface SendingSpeed {
   messagesPerHour: number;
   description?: string;
   customizable?: boolean;
+}
+
+// Interface para contatos
+interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+  carteira?: string;
+  squad?: string;
 }
 
 const CreateCampaign = () => {
@@ -39,6 +49,7 @@ const CreateCampaign = () => {
   const [contactsList, setContactsList] = useState<string>("");
   const [prompts, setPrompts] = useState<string[]>(["Olá {{nome}},\n\nBem-vindo à nossa campanha!\n\nAtenciosamente,\nEquipe de Marketing"]);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
 
   // Configurações de velocidade de envio
   const speedSettings: Record<string, SendingSpeed> = {
@@ -81,14 +92,6 @@ const CreateCampaign = () => {
     { id: "instance1", name: "Instância Principal" },
     { id: "instance2", name: "Instância de Backup" },
     { id: "instance3", name: "Instância de Marketing" },
-  ];
-
-  // Lista de listas de contatos disponíveis
-  const contactLists = [
-    { id: "list1", name: "Clientes Ativos (542 contatos)" },
-    { id: "list2", name: "Leads Novos (238 contatos)" },
-    { id: "list3", name: "Clientes Inativos (890 contatos)" },
-    { id: "list4", name: "Aniversariantes do Mês (45 contatos)" },
   ];
 
   const handleGoBack = () => {
@@ -162,6 +165,26 @@ const CreateCampaign = () => {
     if (!sendingSpeed || !speedSettings[sendingSpeed]) return 0;
     return speedSettings[sendingSpeed].messagesPerHour;
   };
+  
+  // Manipulador para seleção de contatos
+  const handleContactsSelection = (contacts: Contact[]) => {
+    setSelectedContacts(contacts);
+    // Aqui você pode implementar a lógica para criar uma nova lista com os contatos selecionados
+    // ou simplesmente trabalhar com os contatos selecionados
+  };
+  
+  // Manipulador para seleção de lista de contatos
+  const handleContactListSelect = (listId: string, listName: string) => {
+    setContactsList(listId);
+  };
+
+  // Lista de contatos disponíveis (simulada)
+  const contactLists = [
+    { id: "list1", name: "Clientes Ativos (542 contatos)" },
+    { id: "list2", name: "Leads Novos (238 contatos)" },
+    { id: "list3", name: "Clientes Inativos (890 contatos)" },
+    { id: "list4", name: "Aniversariantes do Mês (45 contatos)" },
+  ];
 
   return (
     <div className="container py-8 max-w-6xl animate-fade-in">
@@ -285,21 +308,11 @@ const CreateCampaign = () => {
                         <Users className="h-4 w-4 mr-1 text-muted-foreground" />
                         Lista de Contatos *
                       </Label>
-                      <Select 
-                        value={contactsList}
-                        onValueChange={setContactsList}
-                      >
-                        <SelectTrigger id="contactsList">
-                          <SelectValue placeholder="Selecione uma lista de contatos" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {contactLists.map((list) => (
-                            <SelectItem key={list.id} value={list.id}>
-                              {list.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <ContactsSelectionDialog 
+                        onSelectionChange={handleContactsSelection} 
+                        selectedListId={contactsList}
+                        onListSelect={handleContactListSelect}
+                      />
                     </div>
 
                     <div className="space-y-2">
