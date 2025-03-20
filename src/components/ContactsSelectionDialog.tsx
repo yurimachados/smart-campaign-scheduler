@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Search, Check, Users, FolderOpen, UserPlus } from "lucide-react";
 import { Input } from "./ui/input";
