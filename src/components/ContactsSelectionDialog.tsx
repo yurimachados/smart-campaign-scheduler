@@ -1,49 +1,13 @@
+
 import React, { useState } from "react";
-import { Search, Check, Users, FolderOpen, UserPlus } from "lucide-react";
-import { Input } from "./ui/input";
+import { Users } from "lucide-react";
 import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
   DialogTrigger,
 } from "./ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "./ui/tabs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "./ui/collapsible";
-import { ScrollArea } from "./ui/scroll-area";
-
-// Tipos
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-  carteira?: string;
-  squad?: string;
-}
-
-interface Carteira {
-  id: string;
-  name: string;
-  contacts: Contact[];
-}
-
-interface Squad {
-  id: string;
-  name: string;
-  contacts: Contact[];
-}
+import { ContactsSelectionContent } from "./contacts-selection/ContactsSelectionContent";
+import { Contact, Carteira, Squad, ContactList } from "./contacts-selection/types";
 
 interface ContactsSelectionDialogProps {
   onSelectionChange: (selectedContacts: Contact[]) => void;
@@ -78,7 +42,7 @@ export function ContactsSelectionDialog({
   ];
 
   // Lista de contatos
-  const contactLists = [
+  const contactLists: ContactList[] = [
     { id: "list1", name: "Clientes Ativos (542 contatos)" },
     { id: "list2", name: "Leads Novos (238 contatos)" },
     { id: "list3", name: "Clientes Inativos (890 contatos)" },
@@ -117,12 +81,6 @@ export function ContactsSelectionDialog({
       contacts: contacts.filter(c => c.squad === "suporte") 
     }
   ];
-
-  // Filtrar contatos baseados no termo de busca
-  const filteredContacts = contacts.filter(contact => 
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.phone.includes(searchTerm)
-  );
 
   // Alternar a abertura/fechamento de uma carteira
   const toggleCarteira = (carteiraId: string) => {
@@ -245,224 +203,28 @@ export function ContactsSelectionDialog({
             "Selecione uma lista de contatos"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Selecionar Contatos</DialogTitle>
-        </DialogHeader>
-        
-        <Tabs defaultValue="lists">
-          <TabsList className="w-full">
-            <TabsTrigger value="lists" className="flex-1">Listas Predefinidas</TabsTrigger>
-            <TabsTrigger value="contacts" className="flex-1">Contatos</TabsTrigger>
-            <TabsTrigger value="carteiras" className="flex-1">Carteiras</TabsTrigger>
-            <TabsTrigger value="squads" className="flex-1">Squads</TabsTrigger>
-          </TabsList>
-          
-          {/* Listas predefinidas */}
-          <TabsContent value="lists">
-            <ScrollArea className="max-h-[400px] pr-4">
-              <div className="space-y-2 pt-2">
-                {contactLists.map(list => (
-                  <div 
-                    key={list.id} 
-                    className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-muted ${selectedListId === list.id ? 'bg-muted' : ''}`}
-                    onClick={() => handleSelectList(list.id)}
-                  >
-                    <div className="flex items-center">
-                      <Users className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>{list.name}</span>
-                    </div>
-                    {selectedListId === list.id && <Check className="h-4 w-4 text-primary" />}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          {/* Contatos individuais */}
-          <TabsContent value="contacts">
-            <div className="mb-4 pt-2">
-              <Input
-                placeholder="Buscar contatos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-                icon={<Search className="h-4 w-4 text-muted-foreground" />}
-              />
-            </div>
-            
-            <ScrollArea className="max-h-[350px] pr-4">
-              <div className="space-y-2">
-                {filteredContacts.map(contact => (
-                  <div 
-                    key={contact.id} 
-                    className="flex items-center justify-between p-3 rounded-md hover:bg-muted"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox 
-                        id={`contact-${contact.id}`} 
-                        checked={selectedContacts.some(c => c.id === contact.id)}
-                        onCheckedChange={() => handleContactSelection(contact)}
-                      />
-                      <div className="flex flex-col">
-                        <label 
-                          htmlFor={`contact-${contact.id}`}
-                          className="text-sm font-medium cursor-pointer"
-                        >
-                          {contact.name}
-                        </label>
-                        <span className="text-xs text-muted-foreground">{contact.phone}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      {contact.carteira && (
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                          {carteiras.find(c => c.id === contact.carteira)?.name}
-                        </span>
-                      )}
-                      {contact.squad && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                          {squads.find(s => s.id === contact.squad)?.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          {/* Carteiras */}
-          <TabsContent value="carteiras">
-            <ScrollArea className="max-h-[400px] pr-4">
-              <div className="space-y-2 pt-2">
-                {carteiras.map(carteira => (
-                  <Collapsible 
-                    key={carteira.id}
-                    open={openCarteiras.includes(carteira.id)}
-                    onOpenChange={() => toggleCarteira(carteira.id)}
-                    className="border rounded-md mb-2"
-                  >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-muted rounded-md">
-                      <div className="flex items-center gap-3">
-                        <Checkbox 
-                          id={`carteira-${carteira.id}`}
-                          checked={isCarteiraAllSelected(carteira.id)}
-                          onCheckedChange={() => handleSelectAllCarteira(carteira.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="flex items-center">
-                          <FolderOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <span>{carteira.name} ({carteira.contacts.length} contatos)</span>
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent className="pl-9 pr-3 pb-3 space-y-2">
-                      {carteira.contacts.map(contact => (
-                        <div 
-                          key={contact.id} 
-                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              id={`contact-${contact.id}`}
-                              checked={selectedContacts.some(c => c.id === contact.id)}
-                              onCheckedChange={() => handleContactSelection(contact)}
-                            />
-                            <div className="flex flex-col">
-                              <label 
-                                htmlFor={`contact-${contact.id}`}
-                                className="text-sm font-medium cursor-pointer"
-                              >
-                                {contact.name}
-                              </label>
-                              <span className="text-xs text-muted-foreground">{contact.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          {/* Squads */}
-          <TabsContent value="squads">
-            <ScrollArea className="max-h-[400px] pr-4">
-              <div className="space-y-2 pt-2">
-                {squads.map(squad => (
-                  <Collapsible 
-                    key={squad.id}
-                    open={openSquads.includes(squad.id)}
-                    onOpenChange={() => toggleSquad(squad.id)}
-                    className="border rounded-md mb-2"
-                  >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full p-3 hover:bg-muted rounded-md">
-                      <div className="flex items-center gap-3">
-                        <Checkbox 
-                          id={`squad-${squad.id}`}
-                          checked={isSquadAllSelected(squad.id)}
-                          onCheckedChange={() => handleSelectAllSquad(squad.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="flex items-center">
-                          <FolderOpen className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <span>{squad.name} ({squad.contacts.length} contatos)</span>
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    
-                    <CollapsibleContent className="pl-9 pr-3 pb-3 space-y-2">
-                      {squad.contacts.map(contact => (
-                        <div 
-                          key={contact.id} 
-                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              id={`contact-${contact.id}`}
-                              checked={selectedContacts.some(c => c.id === contact.id)}
-                              onCheckedChange={() => handleContactSelection(contact)}
-                            />
-                            <div className="flex flex-col">
-                              <label 
-                                htmlFor={`contact-${contact.id}`}
-                                className="text-sm font-medium cursor-pointer"
-                              >
-                                {contact.name}
-                              </label>
-                              <span className="text-xs text-muted-foreground">{contact.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-        
-        <DialogFooter className="flex justify-between items-center">
-          <div className="text-sm">
-            {selectedContacts.length} contatos selecionados
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirm} disabled={selectedContacts.length === 0}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Confirmar Seleção
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
+      <ContactsSelectionContent
+        contacts={contacts}
+        carteiras={carteiras}
+        squads={squads}
+        contactLists={contactLists}
+        selectedContacts={selectedContacts}
+        searchTerm={searchTerm}
+        openCarteiras={openCarteiras}
+        openSquads={openSquads}
+        selectedListId={selectedListId}
+        onSearchChange={setSearchTerm}
+        onToggleCarteira={toggleCarteira}
+        onToggleSquad={toggleSquad}
+        onContactSelection={handleContactSelection}
+        onSelectAllCarteira={handleSelectAllCarteira}
+        onSelectAllSquad={handleSelectAllSquad}
+        isCarteiraAllSelected={isCarteiraAllSelected}
+        isSquadAllSelected={isSquadAllSelected}
+        onSelectList={handleSelectList}
+        onConfirm={handleConfirm}
+        onCancel={() => setOpen(false)}
+      />
     </Dialog>
   );
 }
