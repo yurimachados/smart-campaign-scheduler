@@ -1,11 +1,12 @@
-import { useState } from "react";
+
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Save, Calendar, Smartphone, Gauge, Users } from "lucide-react";
+import { ArrowLeft, Save, Calendar, Smartphone, Gauge, Users, ImageIcon, X, Plus, UploadCloud } from "lucide-react";
 import { AIPromptEditor } from "@/components/AIPromptEditor";
 import { toast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { SendingMetricsCard } from "@/components/SendingMetricsCard";
 import { ContactsSelectionDialog } from "@/components/ContactsSelectionDialog";
+import { CampaignImage } from "@/components/contacts-selection/types";
 
 // Tipo de velocidade de envio
 interface SendingSpeed {
@@ -50,6 +52,8 @@ const CreateCampaign = () => {
   const [prompts, setPrompts] = useState<string[]>(["Olá {{nome}},\n\nBem-vindo à nossa campanha!\n\nAtenciosamente,\nEquipe de Marketing"]);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedContacts, setSelectedContacts] = useState<Contact[]>([]);
+  const [campaignImages, setCampaignImages] = useState<CampaignImage[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Configurações de velocidade de envio
   const speedSettings: Record<string, SendingSpeed> = {
@@ -147,6 +151,41 @@ const CreateCampaign = () => {
       });
       navigate("/");
     }, 1500);
+  };
+
+  const handleImageSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    
+    const newImages = Array.from(files).map(file => {
+      const id = `img-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      const previewUrl = URL.createObjectURL(file);
+      
+      return { id, file, previewUrl };
+    });
+    
+    setCampaignImages([...campaignImages, ...newImages]);
+    
+    // Reset the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+  
+  const removeImage = (id: string) => {
+    const updatedImages = campaignImages.filter(image => image.id !== id);
+    const removedImage = campaignImages.find(image => image.id === id);
+    
+    if (removedImage) {
+      URL.revokeObjectURL(removedImage.previewUrl);
+    }
+    
+    setCampaignImages(updatedImages);
+    
+    toast({
+      title: "Imagem removida",
+      description: "A imagem foi removida da campanha.",
+    });
   };
 
   // Get the total number of contacts in the selected list
@@ -365,6 +404,67 @@ const CreateCampaign = () => {
               onSave={handleSavePrompts} 
             />
           </div>
+
+          {/* Image Attachment Section */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  Anexar Imagens
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Adicione imagens para enviar junto com sua mensagem. Formatos aceitos: JPG, PNG, GIF (máx. 5MB por arquivo)
+                </p>
+
+                <div className="space-y-4">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageSelection}
+                    accept="image/jpeg, image/png, image/gif"
+                    multiple
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-24 border-dashed flex flex-col gap-2"
+                  >
+                    <UploadCloud className="h-6 w-6" />
+                    <span>Clique para selecionar imagens</span>
+                  </Button>
+                  
+                  {campaignImages.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      {campaignImages.map(image => (
+                        <div key={image.id} className="relative group">
+                          <div className="aspect-square rounded-md overflow-hidden border bg-muted">
+                            <img 
+                              src={image.previewUrl} 
+                              alt="Preview" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeImage(image.id)}
+                            className="absolute top-1 right-1 bg-red-500 rounded-full p-1 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remover imagem"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex justify-end gap-3">
             <Button 

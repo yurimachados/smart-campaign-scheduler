@@ -23,3 +23,9 @@ export interface ContactList {
   id: string;
   name: string;
 }
+
+export interface CampaignImage {
+  id: string;
+  file: File;
+  previewUrl: string;
+}
